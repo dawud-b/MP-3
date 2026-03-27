@@ -24,12 +24,12 @@
 
 
 /* Define these values to match your devices */
-#define USB_SKEL_VENDOR_ID	0xfff0
-#define USB_SKEL_PRODUCT_ID	0xfff0
+#define USB_SKEL_VENDOR_ID	LAUNCHER_VENDOR_ID
+#define USB_SKEL_PRODUCT_ID	LAUNCHER_PRODUCT_ID
 
 /* table of devices that work with this driver */
-static const struct usb_device_id skel_table[] = {
-	{ USB_DEVICE(USB_SKEL_VENDOR_ID, USB_SKEL_PRODUCT_ID) },
+static const struct usb_device_id launcher_table[] = {
+	{ USB_DEVICE(LAUNCHER_VENDOR_ID, LAUNCHER_PRODUCT_ID) },
 	{ }					/* Terminating entry */
 };
 MODULE_DEVICE_TABLE(usb, skel_table);
