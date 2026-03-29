@@ -67,6 +67,9 @@ struct usb_launcher {
 	struct kref		kref;
 	struct mutex		io_mutex;		/* synchronize I/O with disconnect */
 	struct completion	bulk_in_completion;	/* to wait for an ongoing read */
+	struct usb_endpoint_descriptor*		int_in_endpoint;
+	unsigned char* int_in_buffer;
+	struct urb* int_in_urb;
 };
 #define to_launcher_dev(d) container_of(d, struct usb_launcher, kref)
 
@@ -418,40 +421,11 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 		goto error;
 
 
-	if (!buf) {
-		retval = -ENOMEM;
-		goto error;
-	}
-
-	if (copy_from_user(buf, user_buffer, writesize)) {
-		retval = -EFAULT;
-		goto error;
-	}
-
-	/* this lock makes sure we don't submit URBs to gone devices */
-	mutex_lock(&dev->io_mutex);
-	if (!dev->interface) {		/* disconnect() was called */
-		mutex_unlock(&dev->io_mutex);
-		retval = -ENODEV;
-		goto error;
-	}
-	/*
-	 * release our reference to this urb, the USB core will eventually free
-	 * it entirely
-	 */
-	usb_free_urb(urb);
-
-
 	return writesize;
 
-error_unanchor:
-	usb_unanchor_urb(urb);
 error:
-	if (urb) {
-		usb_free_coherent(dev->udev, writesize, buf, urb->transfer_dma);
-		usb_free_urb(urb);
-	}
-	up(&dev->limit_sem);
+
+	pr_info("error or something\n");
 
 exit:
 	return retval;
@@ -477,6 +451,10 @@ static struct usb_class_driver launcher_class = {
 	.minor_base =	USB_LAUNCHER_MINOR_BASE,
 };
 
+static int launcher_int_in_callback(struct urb* urb, struct pt_regs* regs) {
+	return 0;
+}
+
 static int launcher_probe(struct usb_interface *interface,
 		      const struct usb_device_id *id)
 {
@@ -489,6 +467,8 @@ static int launcher_probe(struct usb_interface *interface,
 
 	/* allocate memory for our device state and initialize it */
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
+	dev->int_in_buffer = kzalloc(8, GFP_KERNEL);
+
 	if (!dev) {
 		dev_err(&interface->dev, "Out of memory\n");
 		goto error;
@@ -505,6 +485,20 @@ static int launcher_probe(struct usb_interface *interface,
 
 	/* save our data pointer in this interface device */
 	usb_set_intfdata(interface, dev);
+
+	for (i = 0; i < iface_desc->desc.bNumEndpoints; i++) {
+		endpoint = &iface_desc->endpoint[i].desc;
+
+		if (((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN) && ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT))
+			dev->int_in_endpoint = endpoint;
+	}
+
+	if (!dev->int_in_endpoint) {
+		printk("Could not find interrupt in endpoint\n");
+		goto error;
+	}
+
+	usb_fill_int_urb(dev->int_in_urb, dev->udev, usb_rcvintpipe(dev->udev, endpoint->bEndpointAddress), dev->int_in_buffer, sizeof(dev->int_in_buffer), launcher_int_in_callback, int_in_urb, endpoint->bInterval);
 
 	/* we can register the device now, as it is ready */
 	retval = usb_register_dev(interface, &launcher_class);
