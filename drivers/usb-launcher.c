@@ -391,20 +391,26 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 	if (count == 0)
 		goto exit;
 
+	char command;
+	get_user(command, user_buffer);
 	
 	char buf[8] = {0};
 	buf[0] = LAUNCHER_CTRL_COMMAND_PREFIX;
-	buf[1] = *user_buffer;
+	buf[1] = command;
 
 
 
-	spin_lock_irq(&dev->err_lock);
+	// spin_lock_irq(&dev->err_lock);
 
 
 
-	spin_unlock_irq(&dev->err_lock);
+	// spin_unlock_irq(&dev->err_lock);
+
+	pr_info("Got character: %x\n", command);
 
 	retval = usb_control_msg(dev->udev, usb_sndctrlpipe(dev->udev, 0), LAUNCHER_CTRL_REQUEST, LAUNCHER_CTRL_REQUEST_TYPE, LAUNCHER_CTRL_VALUE, LAUNCHER_CTRL_INDEX, buf, sizeof(buf), HZ*5);
+
+	pr_info("Sent it\n");
 	
 
 
