@@ -411,14 +411,13 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 	pr_info("Count is: %d\n", count);
 	struct usb_launcher *dev;
 	int retval = 0;
-	struct urb *urb = NULL;
 	size_t writesize = min(count, (size_t)MAX_TRANSFER);
 
 	dev = file->private_data;
 
 	/* verify that we actually have some data to write */
 	if (count == 0)
-		goto exit;
+		return -1;
 	
 	//pr_info("Prederef\n"); lol
 	pr_info("pointer: %p\n", user_buffer);
@@ -434,53 +433,12 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 
 
 
-	spin_lock_irq(&dev->err_lock);
-
-
-
-	spin_unlock_irq(&dev->err_lock);
-
 	retval = usb_control_msg(dev->udev, usb_sndctrlpipe(dev->udev, 0), LAUNCHER_CTRL_REQUEST, LAUNCHER_CTRL_REQUEST_TYPE, LAUNCHER_CTRL_VALUE, LAUNCHER_CTRL_INDEX, buf, 8, HZ*5);
 
 	kfree(buf);	
 
-	pr_info("Did it?\n");
+	pr_info("Did it? retval: %d\n", retval);
 
-	if (retval < 0)
-		goto error;
-
-
-	if (!buf) {
-		retval = -ENOMEM;
-		goto error;
-	}
-
-	if (copy_from_user(buf, user_buffer, writesize)) {
-		retval = -EFAULT;
-		goto error;
-	}
-
-	/* this lock makes sure we don't submit URBs to gone devices */
-	mutex_lock(&dev->io_mutex);
-	if (!dev->interface) {		/* disconnect() was called */
-		mutex_unlock(&dev->io_mutex);
-		retval = -ENODEV;
-		goto error;
-	}
-
-
-	return writesize;
-
-error_unanchor:
-	usb_unanchor_urb(urb);
-error:
-	if (urb) {
-		usb_free_coherent(dev->udev, writesize, buf, urb->transfer_dma);
-		usb_free_urb(urb);
-	}
-	up(&dev->limit_sem);
-
-exit:
 	return retval;
 }
 
@@ -490,8 +448,6 @@ static const struct file_operations launcher_fops = {
 	.write =	launcher_write,
 	.open =		launcher_open,
 	.release =	launcher_release,
-	.flush =	launcher_flush,
-	.llseek =	noop_llseek,
 };
 
 /*
