@@ -431,9 +431,11 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 	buf[0] = LAUNCHER_CTRL_COMMAND_PREFIX;
 	buf[1] = command;
 
-
+	mutex_lock(&dev->io_mutex);
 
 	retval = usb_control_msg(dev->udev, usb_sndctrlpipe(dev->udev, 0), LAUNCHER_CTRL_REQUEST, LAUNCHER_CTRL_REQUEST_TYPE, LAUNCHER_CTRL_VALUE, LAUNCHER_CTRL_INDEX, buf, 8, HZ*5);
+	
+	mutex_unlock(&dev->io_mutex);	
 
 	kfree(buf);	
 
