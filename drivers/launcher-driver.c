@@ -406,12 +406,12 @@ static void launcher_write_bulk_callback(struct urb *urb)
 static ssize_t launcher_write(struct file *file, const char *user_buffer,
 			  size_t count, loff_t *ppos)
 {
-	pr_info("In write\n");
-	printk("Also in write\n");
-	pr_info("Count is: %d\n", count);
+	//pr_info("In write\n");
+	//printk("Also in write\n");
+	//pr_info("Count is: %d\n", count);
 	struct usb_launcher *dev;
 	int retval = 0;
-	size_t writesize = min(count, (size_t)MAX_TRANSFER);
+	//size_t writesize = min(count, (size_t)MAX_TRANSFER);
 
 	dev = file->private_data;
 
@@ -420,7 +420,7 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 		return -1;
 	
 	//pr_info("Prederef\n"); lol
-	pr_info("pointer: %p\n", user_buffer);
+	//pr_info("pointer: %p\n", user_buffer);
 	char command;
 	get_user(command, user_buffer); // is macro
 	//pr_info("Post dereference\n");
@@ -439,7 +439,7 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 
 	kfree(buf);	
 
-	pr_info("Did it? retval: %d\n", retval);
+	//pr_info("Did it? retval: %d\n", retval);
 
 	return retval;
 }
