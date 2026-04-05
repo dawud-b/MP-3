@@ -1,2 +1,0 @@
-image.ub filter=lfs diff=lfs merge=lfs -text
-sdcard_files/image.ub filter=lfs diff=lfs merge=lfs -text
