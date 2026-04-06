@@ -3,18 +3,6 @@ import cv2
 import matplotlib.pyplot as plt
 import time
 
-def contour_center(cnt):
-    M = cv2.moments(cnt)
-    if M['m00'] == 0: return None
-    return (M['m10'] / M['m00'], M['m01'] / M['m00'])
-
-def is_circular(cnt, circular_theshold=0.72):
-    area = cv2.contourArea(cnt)
-    if area < 100: return False
-    perimeter = cv2.arcLength(cnt, True)
-    if perimeter == 0: return False
-    circularity = (4*np.pi*area) / (perimeter ** 2)
-    return circularity > circular_theshold
 
 def contour_center_if_circular(cnt, circular_threshold=0.7):
     area = cv2.contourArea(cnt)
@@ -31,6 +19,9 @@ frame = np.fromfile("images/BIMG_010.BIN", dtype=np.uint16).reshape((1080, 1920)
 
 start = time.perf_counter_ns()
 
+# view it as strided image to reduce resolution and only care about Y value of YCbCr
+# in reality, this likely does a index calculation whenever frame_strided is indexed
+# so in c++ implementation, just do a smart copy to a buffer from the frame buffer that only stores Y while also downscaling resolution
 frame_u8 = frame.view(np.uint8)
 frame_Ys_u8 = frame_u8[:, 0::2]
 frame_strided = frame_Ys_u8[::4, ::4]
@@ -41,6 +32,7 @@ _, thresh = cv2.threshold(blurred_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OT
 # plt.imshow(thresh)
 # plt.show()
 
+# RETR_TREE captures the hierarchy which naturally fits with our goal of finding nested rings (what our bullseye looks like)
 cnts, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 hierarchy = hierarchy[0]
 
@@ -72,27 +64,13 @@ center = None
 if top_depth >= 4: center = props[idx_with_top_depth]
 
 end = time.perf_counter_ns()
-print((end - start) * 10.0 ** -6)
+print(f"{(end - start) * 10.0 ** -6} ms")
 
-print(center)
+print(f"depth: {top_depth}")
+print(f"center: {center}")
+# it may be more accurate to use the center of the most nested inner ring, but there doesn't seem to be much difference between the outmost ring center and the innermost ring center
+
 
 plt.imshow(blurred_img, cmap='gray', vmin=0, vmax=255)
 plt.show()
-
-
-# all_cnts = []
-# for img in [thresh, cv2.bitwise_not(thresh)]:
-#     plt.imshow(img)
-#     plt.show()
-#     cnts, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-#     all_cnts.extend(cnts)
-
-# circular = [c for c in all_cnts if is_circular(c)]
-
-# for cnt in circular:
-#     print(contour_center(cnt))
-
-
-# plt.imshow(blurred_img, cmap='gray', vmin=0, vmax=255)
-# plt.show()
 
