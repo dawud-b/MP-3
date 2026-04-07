@@ -11,7 +11,7 @@ uint8_t downscaled_gray_buffer[480*270];
 uint8_t blurred_buffer[480*270];
 
 void update_framebuffer() {
-    std::ifstream file("../images/BIMG_000.BIN", std::ios::binary);
+    std::ifstream file("../images/BIMG_001.BIN", std::ios::binary);
     if (!file) return;
 
     file.read(reinterpret_cast<char*>(framebuffer), sizeof(framebuffer));
@@ -24,6 +24,22 @@ void downscale_and_gray() {
             downscaled_gray_buffer[r * 480 + c] = static_cast<uint8_t>(row[c * 4]);
         }
     }
+}
+
+cv::Point contour_center_if_circular(const std::vector<cv::Point>& cnt, float circular_threshold = 0.7) {
+    double area = cv::contourArea(cnt);
+    if (area < 100)
+        return cv::Point (-1, -1);
+    double perimeter = cv::arcLength(cnt, true);
+    if (perimeter == 0)
+        return cv::Point (-1, -1);
+    
+    double circularity = (4 * 3.14159265358979323846 * area) / (perimeter * perimeter);
+    if (circularity <= circular_threshold)
+        return cv::Point (-1, -1);
+    
+    cv::Moments M = cv::moments(cnt);
+    return cv::Point (M.m10 / M.m00, M.m01 / M.m00);
 }
 
 int main() {
@@ -49,6 +65,13 @@ int main() {
         hierarchy.clear();
 
         cv::findContours(img, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+        std::vector<cv::Point> props;
+        for (const auto& cnt : contours) {
+            cv::Point center = contour_center_if_circular(cnt);
+            props.push_back(center);
+            std::cout << center << std::endl;
+        }
 
 
 
