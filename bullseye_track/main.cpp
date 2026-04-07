@@ -42,6 +42,13 @@ cv::Point contour_center_if_circular(const std::vector<cv::Point>& cnt, float ci
     return cv::Point (M.m10 / M.m00, M.m01 / M.m00);
 }
 
+
+int chain_depth(const std::vector<cv::Point>& props, const std::vector<cv::Vec4i>& hierarchy, int i) {
+    if (i == -1 || props[i] == cv::Point(-1, -1))
+        return 0;
+    return 1 + chain_depth(props, hierarchy, hierarchy[i][2]);
+}
+
 int main() {
 
     std::cout << "Starting" << std::endl;
@@ -70,8 +77,23 @@ int main() {
         for (const auto& cnt : contours) {
             cv::Point center = contour_center_if_circular(cnt);
             props.push_back(center);
-            std::cout << center << std::endl;
         }
+
+        int idx_with_top_depth = -1;
+        int top_depth = 0;
+
+        for (int i = 0; i < contours.size(); i++) {
+            if (props[i] == cv::Point(-1, -1))
+                continue;
+            
+            int depth = chain_depth(props, hierarchy, i);
+            if (depth > top_depth) {
+                top_depth = depth;
+                idx_with_top_depth = i;
+            }
+        }
+
+        std::cout << top_depth << std::endl;
 
 
 
