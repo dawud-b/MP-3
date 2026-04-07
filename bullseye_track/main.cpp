@@ -1,6 +1,5 @@
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
 #include "launcher_commands.h"
 #include <fstream>
 #include <vector>
