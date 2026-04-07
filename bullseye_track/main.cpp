@@ -29,8 +29,11 @@ void downscale_and_gray() {
 int main() {
 
     std::cout << "Starting" << std::endl;
-    while (1) {
 
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+
+    while (1) {
         update_framebuffer();
         downscale_and_gray();
 
@@ -38,7 +41,14 @@ int main() {
         cv::Mat blurred_img(270, 480, CV_8UC1, blurred_buffer);
 
         cv::GaussianBlur(img, blurred_img, cv::Size(3, 3), 1);
+
+        // reuse old image; don't use another buffer uneccessary
         cv::threshold(blurred_img, img, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+        contours.clear();
+        hierarchy.clear();
+
+        cv::findContours(img, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
 
 
