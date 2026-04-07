@@ -2,6 +2,8 @@
 docker run -it --platform linux/arm/v7 -e QEMU_CPU=cortex-a9 alpine:latest sh
 docker start -ai <name> (from docker ps -a) to reopen
 
+apk add git cmake linux-headers make build-base zlib-static
+
 git clone https://github.com/opencv/opencv.git
 
 cd opencv
@@ -20,9 +22,9 @@ cmake .. \
  -D BUILD_opencv_apps=OFF \
  \
  -D WITH_ITT=OFF \
- -D WITH_CAROTENE=OFF \
- -D WITH_ZLIB=OFF \
- -D BUILD_ZLIB=OFF \
+ -D WITH_CAROTENE=ON \
+ -D WITH_ZLIB=OFF \ # if zlib packages not available or dont match maybe use this
+ -D BUILD_ZLIB=OFF \ # ^
  \
  -D WITH_TBB=OFF \
  -D WITH_OPENMP=OFF \
@@ -41,9 +43,14 @@ cmake .. \
  -D WITH_OPENEXR=OFF \
  -D WITH_JASPER=OFF \
  \
+ -D BUILD_CAROTENE=ON \
  -D CPU_DISPATCH=OFF \
+ -D WITH_NEON=ON \
  -D ENABLE_NEON=ON \
  -D ENABLE_VFPV3=ON
 
-g++ -static main.cpp -I/usr/local/include/opencv4 -L/usr/local/lib -lopencv_imgproc -lopencv_core -lz -no-pie
+make -j$(nproc)
+make install -j$(nproc)
+
+g++ -static main.cpp -I/usr/local/include/opencv4 -L/usr/local/lib -L/usr/local/lib/opencv4/3rdparty -lopencv_imgproc -lopencv_core -lz -ltegra_hal -no-pie
 
