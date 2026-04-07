@@ -1,9 +1,16 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
+#include "launcher_commands.h"
 #include <fstream>
 #include <vector>
+#include <unistd.h>
+#include <fcntl.h>
 
+#define CENTER_X 240
+#define CENTER_Y 135
+
+#define LAUNCHER_DEVICE "/dev/null"
 
 uint16_t framebuffer[1920*1080];
 
@@ -53,11 +60,19 @@ int main() {
 
     std::cout << "Starting" << std::endl;
 
+    unsigned char command = LAUNCHER_STOP;
+    int fd = open(LAUNCHER_DEVICE, O_WRONLY);
+    if (fd == -1)
+        return -1;
+
+    write(fd, &command, 1);
+
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
 
     while (1) {
-        update_framebuffer();
+        update_framebuffer(); // only relevant to our prototyping
+        auto start = std::chrono::high_resolution_clock::now();
         downscale_and_gray();
 
         cv::Mat img(270, 480, CV_8UC1, downscaled_gray_buffer);
@@ -93,12 +108,54 @@ int main() {
             }
         }
 
-        std::cout << top_depth << std::endl;
+        cv::Point center = cv::Point(-1, -1);
+        if (top_depth >= 4)
+            center = props[idx_with_top_depth];
+        
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
+        std::cout << "depth: " << top_depth << std::endl;
+        std::cout << center << std::endl;
+        std::cout << duration.count() << std::endl;
 
+        int x = center.x;
+        int y = center.y;
 
-        cv::imwrite("test.png", img);
-        return 1;
+        command = LAUNCHER_STOP;
+        write(fd, &command, 1);
+
+        if (std::abs(x - CENTER_X) < 10 && std::abs(y - CENTER_Y) < 10) {
+            command = LAUNCHER_FIRE;
+            write(fd, &command, 1);
+            continue;
+        }
+
+        command = 0;
+
+        if (std::abs(x - CENTER_X) >= 10 && std::abs(y - CENTER_Y) >= 10) {
+            if (x - CENTER_X > 0)
+                command = LAUNCHER_RIGHT;
+            else
+                command = LAUNCHER_LEFT;
+            
+            if (y - CENTER_Y > 0)
+                command |= LAUNCHER_UP;
+            else
+                command |= LAUNCHER_DOWN;
+        } else if (std::abs(x - CENTER_X) >= 10) {
+            if (x - CENTER_X > 0)
+                command = LAUNCHER_RIGHT;
+            else
+                command = LAUNCHER_LEFT;
+        } else {
+            if (y - CENTER_Y > 0)
+                command |= LAUNCHER_UP;
+            else
+                command |= LAUNCHER_DOWN;
+        }
+
+        write(fd, &command, 1);
     }
 
 }
