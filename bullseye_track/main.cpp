@@ -1,11 +1,12 @@
+// sentry acceptable_x_closeness acceptable_y_closeness wait_time_between_frame T_for_verbose
 
 #include <opencv2/opencv.hpp>
-//#include <opencv2/highgui.hpp>
 #include "launcher_commands.h"
 #include <fstream>
 #include <vector>
 #include <unistd.h>
 #include <fcntl.h>
+#include <iostream>
 
 #define CENTER_X 240
 #define CENTER_Y 135
@@ -76,6 +77,8 @@ int main(int argc, char** argv) {
         wait = std::atoi(argv[3]);
     }
 
+    bool verbose = argc >= 5 && (*argv[4] == 't' || *argv[4] == 'T');
+
     std::cout << "Starting" << std::endl;
 
     unsigned char command = LAUNCHER_STOP;
@@ -85,12 +88,17 @@ int main(int argc, char** argv) {
 
     write(fd, &command, 1);
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
 
+
     while (1) {
         update_framebuffer(); // only relevant to our prototyping
-        auto start = std::chrono::high_resolution_clock::now();
+        if (verbose) {
+            start = std::chrono::high_resolution_clock::now();
+        }
         downscale_and_gray();
 
         cv::Mat img(270, 480, CV_8UC1, downscaled_gray_buffer);
@@ -133,9 +141,11 @@ int main(int argc, char** argv) {
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-        std::cout << "depth: " << top_depth << std::endl;
-        std::cout << center << std::endl;
-        std::cout << duration.count() << std::endl;
+        if (verbose) {
+            std::cout << "depth: " << top_depth << std::endl;
+            std::cout << center << std::endl;
+            std::cout << duration.count() << std::endl;
+        }
 
         int x = center.x;
         int y = center.y;
