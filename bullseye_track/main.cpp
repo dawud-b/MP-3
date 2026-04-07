@@ -27,21 +27,18 @@ void downscale_and_gray() {
 
 int main() {
 
+    std::cout << "Starting" << std::endl;
     while (1) {
 
+        std::cout << "test1" << std::endl;
         update_framebuffer();
         downscale_and_gray();
 
         cv::Mat img(270, 480, CV_8UC1, downscaled_gray_img);
 
-        cv::imwrite("test.png", img);
-        cv::imshow("asdf", img);
-        cv::waitKey(0);
-        return 1;
-
-
+        bool ok = cv::imwrite("test.png", img);
+        std::cout << "imwrite: " << ok << std::endl;
 
     }
-
 
 }
