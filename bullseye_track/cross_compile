@@ -1,0 +1,49 @@
+
+docker run -it --platform linux/arm/v7 -e QEMU_CPU=cortex-a9 alpine:latest sh
+docker start -ai <name> (from docker ps -a) to reopen
+
+git clone https://github.com/opencv/opencv.git
+
+cd opencv
+mkdir build
+cd build
+
+cmake .. \
+ -D CMAKE_BUILD_TYPE=Release \
+ -D CMAKE_INSTALL_PREFIX=/usr/local \
+ -D BUILD_SHARED_LIBS=OFF \
+ -D BUILD_LIST=core,imgproc \
+ \
+ -D BUILD_TESTS=OFF \
+ -D BUILD_PERF_TESTS=OFF \
+ -D BUILD_EXAMPLES=OFF \
+ -D BUILD_opencv_apps=OFF \
+ \
+ -D WITH_ITT=OFF \
+ -D WITH_CAROTENE=OFF \
+ -D WITH_ZLIB=OFF \
+ -D BUILD_ZLIB=OFF \
+ \
+ -D WITH_TBB=OFF \
+ -D WITH_OPENMP=OFF \
+ -D WITH_PTHREADS_PF=OFF \
+ \
+ -D WITH_IPP=OFF \
+ -D WITH_OPENCL=OFF \
+ -D WITH_OPENCL_SVM=OFF \
+ -D WITH_OPENCLAMDFFT=OFF \
+ -D WITH_OPENCLAMDBLAS=OFF \
+ \
+ -D WITH_JPEG=OFF \
+ -D WITH_PNG=OFF \
+ -D WITH_TIFF=OFF \
+ -D WITH_WEBP=OFF \
+ -D WITH_OPENEXR=OFF \
+ -D WITH_JASPER=OFF \
+ \
+ -D CPU_DISPATCH=OFF \
+ -D ENABLE_NEON=ON \
+ -D ENABLE_VFPV3=ON
+
+g++ -static main.cpp -I/usr/local/include/opencv4 -L/usr/local/lib -lopencv_imgproc -lopencv_core -lz -no-pie
+

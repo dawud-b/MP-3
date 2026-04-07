@@ -1,5 +1,6 @@
 
 #include <opencv2/opencv.hpp>
+//#include <opencv2/highgui.hpp>
 #include "launcher_commands.h"
 #include <fstream>
 #include <vector>
@@ -17,7 +18,14 @@ uint8_t downscaled_gray_buffer[480*270];
 uint8_t blurred_buffer[480*270];
 
 void update_framebuffer() {
-    std::ifstream file("../images/BIMG_001.BIN", std::ios::binary);
+    static int i = 0; // just trying to simulate camera quickly
+    char buf[32];
+    snprintf(buf, sizeof(buf), "../images/BIMG_%03d.BIN", i);
+    std::ifstream file(buf, std::ios::binary);
+    i++;
+    if (i > 10)
+        i = 0;
+    
     if (!file) return;
 
     file.read(reinterpret_cast<char*>(framebuffer), sizeof(framebuffer));
@@ -55,7 +63,18 @@ int chain_depth(const std::vector<cv::Point>& props, const std::vector<cv::Vec4i
     return 1 + chain_depth(props, hierarchy, hierarchy[i][2]);
 }
 
-int main() {
+int main(int argc, char** argv) {
+
+    int x_center_threshold = 10;
+    int y_center_threshold = 10;
+    int wait = 0;
+
+    if (argc >= 3) {
+        x_center_threshold = std::atoi(argv[1]);
+        y_center_threshold = std::atoi(argv[2]);
+    } if (argc >= 4) {
+        wait = std::atoi(argv[3]);
+    }
 
     std::cout << "Starting" << std::endl;
 
@@ -155,6 +174,7 @@ int main() {
         }
 
         write(fd, &command, 1);
+        usleep(wait);
     }
 
 }
