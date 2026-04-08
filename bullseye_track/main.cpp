@@ -21,7 +21,7 @@ uint8_t blurred_buffer[480*270];
 void update_framebuffer() {
     static int i = 0; // just trying to simulate camera quickly
     char buf[32];
-    snprintf(buf, sizeof(buf), "../images/BIMG_%03d.BIN", i);
+    snprintf(buf, sizeof(buf), "./images/BIMG_%03d.BIN", i);
     std::ifstream file(buf, std::ios::binary);
     i++;
     if (i > 10)
@@ -150,16 +150,20 @@ int main(int argc, char** argv) {
         int x = center.x;
         int y = center.y;
 
-        command = LAUNCHER_STOP;
-        write(fd, &command, 1);
+
+        unsigned char previous_command = command;
 
         if (std::abs(x - CENTER_X) < 10 && std::abs(y - CENTER_Y) < 10) {
+            if (previous_command != LAUNCHER_FIRE) {
+                command = LAUNCHER_STOP;
+                write(fd, &command, 1);
+            }
             command = LAUNCHER_FIRE;
             write(fd, &command, 1);
+            usleep(wait);
             continue;
         }
 
-        command = 0;
 
         if (std::abs(x - CENTER_X) >= 10 && std::abs(y - CENTER_Y) >= 10) {
             if (x - CENTER_X > 0)
@@ -183,7 +187,17 @@ int main(int argc, char** argv) {
                 command |= LAUNCHER_DOWN;
         }
 
+        if (previous_command == command) {
+            usleep(wait);
+            continue;
+        }
+
+        previous_command = command;
+        command = LAUNCHER_STOP;
         write(fd, &command, 1);
+        command = previous_command;
+        write(fd, &command, 1);
+
         usleep(wait);
     }
 
