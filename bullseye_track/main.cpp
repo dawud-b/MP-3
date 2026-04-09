@@ -18,10 +18,10 @@ uint16_t framebuffer[1920*1080];
 uint8_t downscaled_gray_buffer[480*270];
 uint8_t blurred_buffer[480*270];
 
-void update_framebuffer() {
+void update_framebuffer(char* images_path) {
     static int i = 0; // just trying to simulate camera quickly
     char buf[32];
-    snprintf(buf, sizeof(buf), "./images/BIMG_%03d.BIN", i);
+    snprintf(buf, sizeof(buf), "%s/BIMG_%03d.BIN", images_path, i);
     std::ifstream file(buf, std::ios::binary);
     i++;
     if (i > 10)
@@ -70,14 +70,21 @@ int main(int argc, char** argv) {
     int y_center_threshold = 10;
     int wait = 0;
 
-    if (argc >= 3) {
-        x_center_threshold = std::atoi(argv[1]);
-        y_center_threshold = std::atoi(argv[2]);
-    } if (argc >= 4) {
-        wait = std::atoi(argv[3]);
+    if (argc < 2) {
+        std::cout << "./sentry <path to image folder containing BIMG_xyz.BIN files> <optional: x from center that is considered sufficiently centered> <optional: y from center that is considered sufficiently centered> <optional: added delay in loop> <optional: T for verbose mode>" << std::endl;
+        return 1;
     }
 
-    bool verbose = argc >= 5 && (*argv[4] == 't' || *argv[4] == 'T');
+    char* images_path = argv[1];
+
+    if (argc >= 4) {
+        x_center_threshold = std::atoi(argv[2]);
+        y_center_threshold = std::atoi(argv[3]);
+    } if (argc >= 5) {
+        wait = std::atoi(argv[4]);
+    }
+
+    bool verbose = argc >= 6 && (*argv[5] == 't' || *argv[5] == 'T');
 
     std::cout << "Starting" << std::endl;
 
@@ -95,7 +102,7 @@ int main(int argc, char** argv) {
 
 
     while (1) {
-        update_framebuffer(); // only relevant to our prototyping
+        update_framebuffer(images_path); // only relevant to our prototyping
         if (verbose) {
             start = std::chrono::high_resolution_clock::now();
         }
@@ -153,7 +160,7 @@ int main(int argc, char** argv) {
 
         unsigned char previous_command = 0;
 
-        if (std::abs(x - CENTER_X) < 10 && std::abs(y - CENTER_Y) < 10) {
+        if (std::abs(x - CENTER_X) < x_center_threshold && std::abs(y - CENTER_Y) < y_center_threshold) {
             if (previous_command != LAUNCHER_FIRE) {
                 command = LAUNCHER_STOP;
                 write(fd, &command, 1);
@@ -165,7 +172,7 @@ int main(int argc, char** argv) {
         }
 
 
-        if (std::abs(x - CENTER_X) >= 10 && std::abs(y - CENTER_Y) >= 10) {
+        if (std::abs(x - CENTER_X) >= x_center_threshold && std::abs(y - CENTER_Y) >= y_center_threshold) {
             if (x - CENTER_X > 0)
                 command = LAUNCHER_RIGHT;
             else
