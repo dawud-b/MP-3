@@ -11,7 +11,7 @@
 #define CENTER_X 240
 #define CENTER_Y 135
 
-#define LAUNCHER_DEVICE "/dev/null"
+#define LAUNCHER_DEVICE "/dev/launcher0"
 
 uint16_t framebuffer[1920*1080];
 
