@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
         int y = center.y;
 
 
-        unsigned char previous_command = command;
+        unsigned char previous_command = 0;
 
         if (std::abs(x - CENTER_X) < 10 && std::abs(y - CENTER_Y) < 10) {
             if (previous_command != LAUNCHER_FIRE) {
