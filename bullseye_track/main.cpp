@@ -20,7 +20,7 @@ uint8_t blurred_buffer[480*270];
 
 void update_framebuffer(char* images_path) {
     static int i = 0; // just trying to simulate camera quickly
-    char buf[32];
+    char buf[128];
     snprintf(buf, sizeof(buf), "%s/BIMG_%03d.BIN", images_path, i);
     std::ifstream file(buf, std::ios::binary);
     i++;
