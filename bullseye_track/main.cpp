@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     int wait = 0;
 
     if (argc < 2) {
-        std::cout << "./sentry <path to image folder containing BIMG_xyz.BIN files> <optional: x from center that is considered sufficiently centered> <optional: y from center that is considered sufficiently centered> <optional: added delay in loop> <optional: T for verbose mode>" << std::endl;
+        std::cout << "./sentry <path to image folder containing BIMG_xyz.BIN files. path relative to executable's location> <optional: x from center that is considered sufficiently centered> <optional: y from center that is considered sufficiently centered> <optional: added delay in loop> <optional: T for verbose mode>" << std::endl;
         return 1;
     }
 
