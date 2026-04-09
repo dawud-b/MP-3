@@ -425,7 +425,7 @@ static ssize_t launcher_write(struct file *file, const char *user_buffer,
 	get_user(command, user_buffer); // is macro
 	//pr_info("Post dereference\n");
 
-	pr_info("Given char: %x\n", command);
+	//pr_info("Given char: %x\n", command);
 	
 	unsigned char* buf = kzalloc(8, GFP_KERNEL);
 	buf[0] = LAUNCHER_CTRL_COMMAND_PREFIX;
